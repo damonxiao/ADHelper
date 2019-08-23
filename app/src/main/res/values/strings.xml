@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">广告助手</string>
+    <string name="accessibility_service_desc">广告助手,去开屏广告,后续功能ing</string>
+    <string name="tips_access_service_ready">辅助功能已开启,请体验跳过开屏广告的功能</string>
+</resources>
