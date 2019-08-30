@@ -31,37 +31,47 @@ class ADAccessibilityService : AccessibilityService() {
             val nodeList = event.source?.findAccessibilityNodeInfosByText("跳过")
             if (nodeList != null && nodeList.size > 0) {
                 for (node in nodeList) {
-                    Logger.d("node packageName:${node.packageName} ,className:${node.className} ,text:${node.text} , clickable:${node.isClickable}")
+                    val nodeParentClickable = node.parent?.isClickable
+                    Logger.d("node packageName:${node.packageName} ,className:${node.className} ,text:${node.text} , clickable:${node.isClickable} parent clickable $nodeParentClickable")
+                    val nodeOutRect = Rect()
+                    node.getBoundsInScreen(nodeOutRect)
+                    val parent = node.parent
+                    val parentOutRect = Rect()
+                    parent.getBoundsInScreen(parentOutRect)
+                    val nodeNearbyParent = rectNearby(nodeOutRect, parentOutRect)
+                    Logger.d("nodeOutRect $nodeOutRect ,parentOutRect $parentOutRect, nodeNearbyParent $nodeNearbyParent")
                     if (node.isClickable) {
-                        Logger.d("performAction ACTION_CLICK node packageName:${node.packageName} ,className:${node.className} ,text:${node.text} , clickable:${node.isClickable}")
-                        toast2User(applicationContext, node)
-                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        Logger.d("click node self to skip AD")
+                        clickNode(node)
+                        break;
+                    } else if (nodeNearbyParent && nodeParentClickable == true) {
+                        Logger.d("click parent to skip AD")
+                        clickNode(parent)
                         break;
                     } else {
-                        val parent = node.parent
-                        val nodeOutRect = Rect()
-                        node.getBoundsInScreen(nodeOutRect)
-                        Logger.d("nodeOutRect $nodeOutRect")
-                        if (parent != null) {
-                            val childCount = parent.childCount
-                            for (childIndex in 0 until childCount) {
-                                val child = parent.getChild(childIndex)
-                                val childOutRect = Rect()
-                                child.getBoundsInScreen(childOutRect)
-                                Logger.d("childOutRect $childOutRect")
-                                Logger.d("child packageName:${child.packageName} ,className:${child.className} ,text:${child.text}")
-                                if (rectNearby(nodeOutRect, childOutRect) && child.isClickable) {
-                                    Logger.d("performAction ACTION_CLICK child packageName:${child.packageName} ,className:${child.className} ,text:${child.text}")
-                                    child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                                    toast2User(applicationContext, child)
-                                    break;
-                                }
+                        val childCount = parent.childCount
+                        for (childIndex in 0 until childCount) {
+                            val child = parent.getChild(childIndex)
+                            val childOutRect = Rect()
+                            child.getBoundsInScreen(childOutRect)
+                            Logger.d("childOutRect $childOutRect")
+                            Logger.d("child packageName:${child.packageName} ,className:${child.className} ,text:${child.text}")
+                            if (rectNearby(nodeOutRect, childOutRect) && child.isClickable) {
+                                Logger.d("click child to skip AD")
+                                clickNode(child)
+                                break;
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun clickNode(node : AccessibilityNodeInfo) {
+        Logger.d("performAction ACTION_CLICK node packageName:${node.packageName} ,className:${node.className} ,text:${node.text} , clickable:${node.isClickable}")
+        toast2User(applicationContext, node)
+        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     private fun rectNearby(rect1 : Rect, rect2 : Rect) :Boolean {
